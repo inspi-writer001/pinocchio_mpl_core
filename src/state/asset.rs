@@ -46,6 +46,7 @@ impl AssetV1 {
 
     /// If `asset.seq` is `Some(_)` then increment and save asset to account space.
     pub fn increment_seq(&mut self) -> ProgramResult {
+        // TODO: Assert that account exists onchain before modifying
         if let Some(_seq) = self.get_seq() {
             let mut val = u64::from_le_bytes(self.seq);
             val = val.saturating_add(1);

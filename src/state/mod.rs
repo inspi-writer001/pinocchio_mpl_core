@@ -32,7 +32,7 @@ macro_rules! enumify {
             ),* $(,)?
         }
     ) => {
-        // The main wrapper struct (remains the same)
+        // The main wrapper struct
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, bytemuck::Pod, bytemuck::Zeroable)]
         $vis struct $name(u8);

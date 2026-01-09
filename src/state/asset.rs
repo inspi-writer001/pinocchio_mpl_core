@@ -1,7 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{ProgramResult, account_info::AccountInfo, pubkey::Pubkey};
 
-use crate::{Key, UpdateAuthority, state::PodStr};
+use crate::{CheckResult, Key, UpdateAuthority, state::PodStr};
 
 #[repr(C)]
 #[derive(Pod, Zeroable, Clone, Copy)]
@@ -23,8 +23,8 @@ pub struct AssetV1 {
 }
 
 impl AssetV1 {
-    /// The base length of the asset account with an empty name and uri and no seq.
-    const BASE_LEN: usize = core::mem::size_of::<Self>();
+    /// The length of the asset account with exact size for name and uri and no seq.
+    const LEN: usize = core::mem::size_of::<Self>();
 
     /// Create a new `Asset` with correct `Key` and `seq` of None.
     pub fn new(
@@ -45,10 +45,11 @@ impl AssetV1 {
     }
 
     /// If `asset.seq` is `Some(_)` then increment and save asset to account space.
-    pub fn increment_seq_and_save(&mut self, account: &AccountInfo) -> ProgramResult {
-        if let Some(seq) = &mut self.get_seq() {
-            *seq = seq.saturating_add(1);
-            self.save(account, 0)?;
+    pub fn increment_seq(&mut self) -> ProgramResult {
+        if let Some(_seq) = self.get_seq() {
+            let mut val = u64::from_le_bytes(self.seq);
+            val = val.saturating_add(1);
+            self.seq = val.to_le_bytes();
         };
 
         Ok(())
@@ -60,5 +61,80 @@ impl AssetV1 {
         } else {
             None
         }
+    }
+
+    /// Check permissions for the create lifecycle event.
+    pub fn check_create() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the add plugin lifecycle event.
+    pub fn check_add_plugin() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the remove plugin lifecycle event.
+    pub fn check_remove_plugin() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the update plugin lifecycle event.
+    pub fn check_update_plugin() -> CheckResult {
+        CheckResult::None
+    }
+
+    /// Check permissions for the approve plugin authority lifecycle event.
+    pub fn check_approve_plugin_authority() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the revoke plugin authority lifecycle event.
+    pub fn check_revoke_plugin_authority() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the transfer lifecycle event.
+    pub fn check_transfer() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the burn lifecycle event.
+    pub fn check_burn() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the update lifecycle event.
+    pub fn check_update() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the compress lifecycle event.
+    pub fn check_compress() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the decompress lifecycle event.
+    pub fn check_decompress() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the add external plugin adapter lifecycle event.
+    pub fn check_add_external_plugin_adapter() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the remove external plugin adapter lifecycle event.
+    pub fn check_remove_external_plugin_adapter() -> CheckResult {
+        CheckResult::CanApprove
+    }
+
+    /// Check permissions for the update external plugin adapter lifecycle event.
+    pub fn check_update_external_plugin_adapter() -> CheckResult {
+        CheckResult::None
+    }
+
+    /// Check permissions for the execute lifecycle event.
+    pub fn check_execute() -> CheckResult {
+        CheckResult::CanApprove
     }
 }

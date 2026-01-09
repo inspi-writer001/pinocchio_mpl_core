@@ -24,27 +24,36 @@ pub use update_authority::*;
 
 #[macro_export]
 macro_rules! enumify {
-    // Usage: enumify! { pub enum MyAccount { CanTransfer, CanNotTransfer } }
-    ($vis:vis enum $name:ident {
-        $($variant:ident $(= $val:expr)?),* $(,)?
-    }) => {
-
+    (
+        $vis:vis enum $name:ident {
+            $(
+                // Capture attributes (like doc comments) here
+                $(#[$meta:meta])* $variant:ident $(= $val:expr)?
+            ),* $(,)?
+        }
+    ) => {
+        // The main wrapper struct (remains the same)
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, bytemuck::Pod, bytemuck::Zeroable)]
         $vis struct $name(u8);
 
-        // The Hidden Logic Block
         const _: () = {
             // Shadow enum purely for auto-increment math
             #[repr(u8)]
             #[allow(non_camel_case_types, dead_code)]
             enum __InnerShadow {
-                $($variant $(= $val)?),*
+                $(
+                    // Pass attributes here too (optional, but good for internal consistency)
+                    $(#[$meta])*
+                    $variant $(= $val)?
+                ),*
             }
 
             // Inject Constants
             impl $name {
                 $(
+                    // Apply the captured doc comments to the public constants
+                    $(#[$meta])*
                     #[allow(non_upper_case_globals)]
                     pub const $variant: Self = Self(__InnerShadow::$variant as u8);
                 )*
@@ -54,35 +63,51 @@ macro_rules! enumify {
 }
 
 enumify! {
-    pub enum DataState {
+ pub enum DataState {
+    /// The data is stored in account state.
     AccountState,
+    /// The data is stored in the ledger history (compressed).
     LedgerState,
-}}
+}
+ }
 
 enumify! {
     pub enum AuthorityType {
+    /// No authority, used for immutability
     None,
+    /// The owner of the core asset.
     Owner,
+    /// The update authority of the core asset.
     UpdateAuthority,
+    /// A pubkey that is the authority over a plugin.
     Address,
 }}
 
 enumify! {
     pub enum UpdateAuthorityType {
+    /// No update authority, used for immutability.
     None,
-    Collection,
+    /// A standard address or PDA.
     Address,
+    /// Authority delegated to a collection.
+    Collection,
 }}
 
 enumify! {
     pub enum Key {
-        Uninitialized,
-        AssetV1,
-        HashedAssetV1,
-        PluginHeaderV1,
-        PluginRegistryV1,
-        CollectionV1,
-     }
+    /// Uninitialized or invalid account.
+    Uninitialized,
+    /// An account holding an uncompressed asset.
+    AssetV1,
+    /// An account holding a compressed asset.
+    HashedAssetV1,
+    /// A discriminator indicating the plugin header.
+    PluginHeaderV1,
+    /// A discriminator indicating the plugin registry.
+    PluginRegistryV1,
+    /// A discriminator indicating the collection.
+    CollectionV1,
+}
 }
 
 /// A fixed-size string wrapper for ZeroCopy structs.
